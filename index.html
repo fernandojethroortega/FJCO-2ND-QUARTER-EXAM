@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Second Quarter Examination — Exam Presenter</title>
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --accent:#2b6cb0;
+      --muted:#6b7280;
+      --text:#0f172a;
+      --radius:14px;
+      --max-width:1000px;
+      --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family:var(--font-sans);
+      background:linear-gradient(180deg, var(--bg), #eef2f7);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:32px;
+    }
+    .app{width:100%;max-width:var(--max-width);}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .brand{display:flex;align-items:center;gap:14px}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#4aa3e0);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px}
+    h1{font-size:20px;margin:0}
+    .subtitle{color:var(--muted);font-size:13px}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 6px 22px rgba(16,24,40,0.06);padding:24px}
+
+    .dashboard{display:flex;gap:16px;flex-wrap:wrap}
+    .subject{flex:1 1 220px;min-width:220px;padding:18px;border-radius:12px;background:linear-gradient(180deg, #fff, #f8fbff);border:1px solid rgba(43,108,176,0.06);cursor:pointer;display:flex;flex-direction:column;gap:10px}
+    .subject h3{margin:0;font-size:18px}
+    .subject p{margin:0;color:var(--muted);font-size:13px}
+    .start-btn{margin-top:10px;padding:10px 14px;background:var(--accent);color:white;border-radius:10px;border:none;font-weight:600;font-size:15px;cursor:pointer}
+
+    /* Presenter */
+    .presenter{display:none;margin-top:18px;position:relative}
+    .presenter.active{display:block}
+    .presenter-inner{display:flex;gap:20px}
+    .slide{flex:1;background:var(--card);border-radius:12px;padding:28px;box-shadow:0 10px 30px rgba(16,24,40,0.06)}
+
+    .question-number{color:var(--muted);font-size:14px;margin-bottom:8px}
+    .question-text{font-size:24px;line-height:1.35;margin-bottom:18px}
+    .choices{display:flex;flex-direction:column;gap:10px}
+    .choice{padding:14px;border-radius:10px;border:1px solid #e6eef9;font-size:18px;background:#fbfdff;cursor:pointer}
+
+    .controls{display:flex;flex-direction:column;gap:10px;width:260px}
+    .meta{display:flex;flex-direction:column;gap:8px}
+    .meta .info{font-size:14px;color:var(--muted)}
+
+    .nav{display:flex;gap:8px;align-items:center}
+    .btn{padding:10px 12px;border-radius:10px;border:1px solid rgba(15,23,42,0.06);background:white;cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--accent);color:white;border:none}
+
+    /* circular timer */
+    .timer-wrap{position:absolute;left:20px;top:20px;display:flex;align-items:center;gap:12px;z-index:5}
+    .timer-circle{width:86px;height:86px;display:grid;place-items:center}
+    .timer-text{font-size:16px;font-weight:700}
+    .small-controls{display:flex;gap:8px;align-items:center}
+
+    /* responsive */
+    @media (max-width:900px){
+      .presenter-inner{flex-direction:column}
+      .controls{width:100%}
+    }
+
+    /* accessibility */
+    .sr-only{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px)}
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">SQ</div>
+        <div>
+          <h1>Second Quarter Examination</h1>
+          <div class="subtitle">Learner‑friendly exam presenter — large readable fonts</div>
+        </div>
+      </div>
+      <div class="subtitle">60 seconds per question • Minimalist theme</div>
+    </header>
+
+    <section class="card">
+      <h2 style="margin-top:0;font-size:16px">Select Subject</h2>
+      <div class="dashboard" id="dashboard">
+        <!-- Subjects injected by JS -->
+      </div>
+
+      <div id="presenter" class="presenter">
+        <div class="timer-wrap" aria-hidden="false">
+          <div id="timerCircle" class="timer-circle" title="Time remaining">
+            <!-- SVG inserted by JS -->
+          </div>
+          <div class="small-controls">
+            <button id="ttsBtn" class="btn" title="Read question aloud">🔊 Read</button>
+            <button id="fsBtn" class="btn" title="Toggle full screen">⤢</button>
+          </div>
+        </div>
+
+        <div class="presenter-inner">
+          <div class="slide" id="slide">
+            <div class="question-number" id="qNumber">Question 1 of 50</div>
+            <div class="question-text" id="qText">Loading...</div>
+            <div class="choices" id="choices"></div>
+          </div>
+
+          <aside class="controls">
+            <div class="card" style="padding:14px;">
+              <div class="meta">
+                <div class="info" id="subjectLabel">Subject:</div>
+                <div class="info">Time per question: <strong>60s</strong></div>
+                <div class="info">Auto‑advance when timer ends (optional)</div>
+              </div>
+              <div style="height:12px"></div>
+              <div class="nav">
+                <button id="prevBtn" class="btn">◀ Prev</button>
+                <button id="nextBtn" class="btn primary">Next ▶</button>
+              </div>
+              <div style="height:10px"></div>
+              <div style="display:flex;gap:8px">
+                <button id="finishBtn" class="btn">Finish</button>
+                <button id="pauseBtn" class="btn">Pause</button>
+              </div>
+            </div>
+            <div class="card" style="padding:14px;display:flex;justify-content:center;align-items:center;min-height:90px">
+              <div style="text-align:center">
+                <div style="font-size:13px;color:var(--muted)">Progress</div>
+                <div id="progress" style="font-weight:700;font-size:18px">0 / 0 answered</div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <div id="startArea" style="margin-top:18px;display:none">
+        <button id="startExam" class="start-btn">Start Exam</button>
+      </div>
+
+    </section>
+
+    <footer style="text-align:center;margin-top:12px;color:var(--muted);font-size:13px">Built for classroom use — open in VS Code and serve the single HTML file.</footer>
+  </div>
+
+  <script>
+    // --- DATA: Subjects and questions ---
+    const subjects = [
+      { id:'eng7', label:'English 7', questions: [
+        // 50 questions from user — each question has text and choices
+        {q:"In the story My Father Goes to Court, what is the main reason the father is taken to court?", choices:["He stole food from a wealthy family.","He borrowed money and didn’t repay it.","He trespassed on the neighbor's property.","He was accused of enjoying the smell of the rich family's food."]},
+        {q:"How does the wealthy family in the story behave towards the poor family?", choices:["They ignore them completely.","They accuse them of stealing their wealth.","They invite them over for dinner frequently.","They resent them for \"stealing\" the smell of their food."]},
+        {q:"What is the father’s response to the accusations in court?", choices:["He pays the family in cash.","He apologizes and promises to pay a fine.","He denies everything and argues with the judge.","He shakes coins in his hand to \"repay\" the family with the sound of money."]},
+        {q:"What theme is explored in the story \"My Father Goes to Court\"?", choices:["The importance of wealth and status","The harm of stealing food from neighbors","The value of family and humor in hard times","The dangers of going to court without a lawyer"]},
+        {q:"What is the judge’s reaction to the father’s defense in court?", choices:["He fines the father.","He finds the situation laughable.","He rules in favor of the wealthy family.","He becomes angry and dismisses the case."]},
+        {q:"Which of the following is an example of internal conflict?", choices:["A village faces destruction after a powerful storm hit.","A firefighter rescues a family from a burning building.","A programmer works to fix a glitch in a new software program.","A student struggles with fear of public speaking before an important presentation."]},
+        {q:"Which of the following BEST represents man vs. society conflict?", choices:["A scientist tries to invent new technology","A hero battles a supernatural creature to save the world","A hiker braves the wilderness to survive after getting lost","A young woman stands up against unjust laws in her town"]},
+        {q:"In a man vs. technology conflict, what does the main character typically struggles against?", choices:["His own beliefs and values","The power of natural disasters","The rules and expectations of society","An advancement of human innovation"]},
+        {q:"What is the main theme of the story How My Brother Leon Brought Home a Wife?", choices:["The challenges of rural life","The sacrifices one makes for love","The importance of family traditions","The struggle of city and rural cultures"]},
+        {q:"Who is the narrator of the story How My Brother Leon Brought Home a Wife?", choices:["Baldo","Labang","Leon","Maria"]},
+        {q:"How does Baldo feel about Maria as they journey to his home?", choices:["He is indifferent","He is openly critical","He is curious and observant","He is skeptical and judgmental"]},
+        {q:"What test did Leon’s father use to gauge Maria’s character?", choices:["Discussing her views on rural life","Asking her to cook a traditional meal","Observing her interactions with their pet","Sending Baldo and Maria on an alternative, challenging route"]},
+        {q:"How does Maria react to the countryside and rural setting during her journey with Baldo?", choices:["She feels detached and homesick","She expresses hesitation and fear","She appreciates and admires the scenery","She complains about the discomfort"]},
+        {q:"Bienvenido N. Santos wrote Scent of Apples drawing from his experiences as a Filipino in the United States. During which period did he move to the U.S., influencing the themes of his work?", choices:["After World War II","Before World War I","During the 1960s","During the Spanish colonial period"]},
+        {q:"The story of Scent of Apples reflects the experience of Filipino immigrants in the U.S. during which historical period, when many Filipinos sought opportunities abroad due to limited prospects at home?", choices:["Post-World War II","During the Philippine Revolution","During the Philippine-American War","Early American occupation of the Philippines"]},
+        {q:"What is the primary theme explored in the story Scent of Apples?", choices:["The power of friendship","The benefits of technology","The importance of education","The hardships of immigrant life"]},
+        {q:"In \"Scent of Apples,\" the protagonist reflects on his past. What does the smell of apples symbolize for him?", choices:["Success and wealth","Freedom and adventure","Nostalgia and lost dreams","Friendliness and community"]},
+        {q:"How does the setting of the story contribute to its overall message?", choices:["It creates a sense of urgency","It highlights the beauty of nature","It emphasizes the importance of family","It showcases the isolation felt by the protagonist"]},
+        {q:"What aspect of Filipino culture does Roces primarily emphasize in his essay We Filipinos Are Mild Drinkers?", choices:["The influence of Western culture","The importance of family gatherings","The social drinking habits of Filipinos","The culinary traditions of the Philippines"]},
+        {q:"In \"We Filipinos Are Mild Drinkers,\" how does Roces describe the Filipino attitude towards alcohol consumption?", choices:["As a means to escape reality","As a competition among friends","As a necessary part of business deals","As a bonding activity that reflects hospitality"]},
+        {q:"Which local color element is prominent in Roces’ portrayal of Filipino drinking culture?", choices:["The use of rice as a staple food","The architecture of traditional homes","The geographical landscape of the Philippines","The use of humor and laughter in social interactions"]},
+        {q:"What underlying theme does Roces convey about Filipino identity through their drinking culture?", choices:["Drinking is a sign of weakness","Filipinos cannot handle alcohol","Alcohol consumption is a new trend","Social interactions define Filipino relationships"]},
+        {q:"How does Roces position Filipino drinking habits in contrast to those of other cultures?", choices:["He portrays Filipinos as sober individuals","He suggests Filipinos drink more than others","He implies that Filipinos drink more moderately and socially","He emphasizes that drinking is culturally irrelevant for Filipinos"]},
+        {q:"Which of the following is the primary purpose of a narrative text?", choices:["To inform the reader about a specific topic","To persuade the reader to adopt a particular viewpoint","Both A and B","None of the Above"]},
+        {q:"What type of literary text is primarily intended to convey information about real events, people, and facts?", choices:["Drama","Fiction","Non-fiction","Poetry"]},
+        {q:"Which literary form is characterized by its use of rhythmic and metaphorical language, often expressing emotions and ideas in a condensed format?", choices:["Essay","Novel","Poetry","Short Story"]},
+        {q:"What is the primary purpose of writing a persuasive text?", choices:["Describe experiences","Narrate a fictional story","Provide detailed analyses","Convince the audience to accept viewpoint"]},
+        {q:"Which of the following BEST describes a drama?", choices:["A personal account of real-life experiences","A text meant for reading silently and reflecting","A written work intended for performance, comprising dialogue and action","Both B and C"]},
+        {q:"Which of the following is the primary purpose of the prewriting stage?", choices:["To finalize the written piece","To correct grammatical errors","To generate ideas and plan the content","To format the document for submission"]},
+        {q:"What is the main goal during the drafting stage?", choices:["To proofread and correct mistakes","To ensure that all sources are cited correctly","To improve the vocabulary and style of the piece","To create a rough version of the writing without worrying about perfection"]},
+        {q:"During which stage of the writing process do writers focus on reorganizing and enhancing the content of their draft?", choices:["Drafting","Editing","Prewriting","Revising"]},
+        {q:"What is the primary focus during the editing stage of the writing process?", choices:["Developing a thesis statement","Gathering feedback from peers","Exploring different writing techniques","Correcting grammatical, punctuation, and spelling errors"]},
+        {q:"Which of the following activities is MOST likely to occur during the prewriting phase?", choices:["Reading through a completed draft","Checking for typos in a final version","Outlining main ideas and arguments","Polishing the language style of the writing"]},
+        {q:"What is the purpose of imagery in poetry?", choices:["To add rhymes","To repeat sounds","To use simple language","To create vivid pictures in mind"]},
+        {q:"What sense is MOST commonly evoked in the line: \"The scent of fresh rain on the earth\"?", choices:["Sight","Smell","Sound","Touch"]},
+        {q:"How does the line \"The wind howled in the night\" use personification?", choices:["By using a rhyme","By describing the sound of wind","By giving wind human-like qualities","By comparing wind to a howling animal"]},
+        {q:"Why do poets use descriptive imagery in their work?", choices:["To add rhymes","To confuse the reader","To lengthen the poem","To create vivid pictures or feelings"]},
+        {q:"What does the form of a poem refer to?", choices:["The central idea","The use of sound devices","The figurative language used","The structure and design including rhyme and rhythm"]},
+        {q:"What is the basic unit of a poem, often characterized by its length and rhythm?", choices:["Line","Stanza","Syllable","Word"]},
+        {q:"How is alliteration BEST described?", choices:["As the main idea of a poem","As the repetition of vowel sounds","As a comparison using \"like\" or \"as\"","As the repetition of the same initial consonant sounds"]},
+        {q:"What is NOT considered a sound device in poetry?", choices:["Alliteration","Imagery","Rhyme","Rhythm"]},
+        {q:"What does the prefix \"anti\" mean?", choices:["Against","Before","Not","Over"]},
+        {q:"What does the suffix \"-less\" in the word \"hopeless\" indicate?", choices:["Able to","Full of","In manner of","Lacking"]},
+        {q:"How can a reader use context clues to understand an unfamiliar word in a poem?", choices:["By looking at the title of the poem","By researching the poet's biography","By considering the length of the poem","By examining the surrounding words and phrases"]},
+        {q:"How does personification enhance a poem?", choices:["By comparing unlike things","By repeating consonant sounds","By using exaggerated statements","By giving human qualities to non-human things"]},
+        {q:"What is the central idea or message of a poem called?", choices:["Line","Rhythm","Stanza","Theme"]},
+        {q:"Why is rhyme important in poetry?", choices:["To confuse the reader","To make the poem longer","To create a musical quality","To make the poem more difficult to read"]},
+        {q:"How does the form of a poem influence its overall structure?", choices:["By using imagery","By adding symbolism","By expressing the theme","By determining the rhyme and rhythm"]},
+        {q:"What characterizes dramatic poetry?", choices:["Telling a story","Using complex imagery","Expressing personal emotions","Featuring characters and dialogue"]},
+        {q:"How is lyric poetry BEST defined?", choices:["A poetry that tells a story.","A poetry that is performed on stage.","A poetry that uses strict rhyme schemes.","A poetry that expresses the speaker's personal feelings and thoughts."]}
+      ]},
+      { id:'ppg11', label:'PPG 11', questions: []},
+      { id:'cnf12', label:'CNF 12', questions: []},
+      { id:'mil12', label:'MIL 12', questions: []}
+    ];
+
+    // --- App state ---
+    let currentSubject = null;
+    let currentIndex = 0;
+    let answers = {};
+    const TIME_PER_Q = 60; // seconds
+    let timer = null;
+    let timeLeft = TIME_PER_Q;
+    let isPaused = false;
+
+    const dashboardEl = document.getElementById('dashboard');
+    const presenterEl = document.getElementById('presenter');
+    const startArea = document.getElementById('startArea');
+    const startExamBtn = document.getElementById('startExam');
+    const qNumberEl = document.getElementById('qNumber');
+    const qTextEl = document.getElementById('qText');
+    const choicesEl = document.getElementById('choices');
+    const subjectLabel = document.getElementById('subjectLabel');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const finishBtn = document.getElementById('finishBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const progressEl = document.getElementById('progress');
+    const ttsBtn = document.getElementById('ttsBtn');
+    const fsBtn = document.getElementById('fsBtn');
+    const timerCircle = document.getElementById('timerCircle');
+
+    // render subject cards
+    function renderSubjects(){
+      dashboardEl.innerHTML = '';
+      subjects.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'subject card';
+        div.innerHTML = `<h3>${s.label}</h3><p>Click to prepare the exam presenter for ${s.label}.</p>`;
+        div.addEventListener('click',()=>selectSubject(s.id));
+        const btn = document.createElement('button'); btn.className='start-btn'; btn.textContent='Select';
+        btn.addEventListener('click',(e)=>{e.stopPropagation(); selectSubject(s.id)});
+        div.appendChild(btn);
+        dashboardEl.appendChild(div);
+      });
+    }
+
+    function selectSubject(id){
+      currentSubject = subjects.find(s=>s.id===id);
+      subjectLabel.textContent = 'Subject: '+currentSubject.label;
+      startArea.style.display = 'block';
+      presenterEl.classList.remove('active');
+      startExamBtn.focus();
+      // prepare start area
+    }
+
+    startExamBtn.addEventListener('click',()=>{
+      if(!currentSubject) return;
+      presenterEl.classList.add('active');
+      startArea.style.display='none';
+      currentIndex=0; answers={};
+      renderQuestion();
+      resetTimer();
+      startTimer();
+    });
+
+    function renderQuestion(){
+      const qs = currentSubject.questions;
+      const q = qs[currentIndex];
+      qNumberEl.textContent = `Question ${currentIndex+1} of ${qs.length}`;
+      qTextEl.textContent = q.q;
+      choicesEl.innerHTML = '';
+      q.choices.forEach((c,i)=>{
+        const el = document.createElement('button');
+        el.className='choice';
+        el.innerHTML = `<div style=\"font-weight:700;margin-bottom:6px\">${String.fromCharCode(65+i)}.</div><div style=\"font-size:16px\">${c}</div>`;
+        el.addEventListener('click',()=>{
+          answers[currentIndex]=i;
+          updateProgress();
+          // mark selected style
+          Array.from(choicesEl.children).forEach(ch=>ch.style.borderColor='#e6eef9');
+          el.style.borderColor='var(--accent)';
+        });
+        choicesEl.appendChild(el);
+      });
+      updateProgress();
+      speakText(q.q + ' Choices: ' + q.choices.map((c,i)=> String.fromCharCode(65+i)+'. '+c).join('. '));
+    }
+
+    function updateProgress(){
+      const total = currentSubject.questions.length;
+      const answered = Object.keys(answers).length;
+      progressEl.textContent = `${answered} / ${total} answered`;
+    }
+
+    prevBtn.addEventListener('click',()=>{
+      if(currentIndex>0){ currentIndex--; renderQuestion(); resetTimer(); startTimer(); }
+    });
+    nextBtn.addEventListener('click',()=>{
+      if(currentIndex < currentSubject.questions.length-1){ currentIndex++; renderQuestion(); resetTimer(); startTimer(); }
+    });
+    finishBtn.addEventListener('click',()=>{
+      stopTimer();
+      presenterEl.classList.remove('active');
+      startArea.style.display='block';
+      alert('Exam finished. Answers saved locally in this session.');
+    });
+
+    pauseBtn.addEventListener('click',()=>{
+      if(isPaused){ startTimer(); pauseBtn.textContent='Pause'; isPaused=false; } else { stopTimer(); pauseBtn.textContent='Resume'; isPaused=true; }
+    });
+
+    // --- Timer circle ---
+    function createTimerSVG(){
+      const size=86; const stroke=8; const r=(size-stroke)/2; const c=2*Math.PI*r;
+      timerCircle.innerHTML = `\n        <svg width="86" height="86" viewBox="0 0 86 86">\n          <defs><linearGradient id=\"g1\" x1=\"0%\" x2=\"100%\">\n            <stop offset=\"0%\" stop-color=\"#2b6cb0\"/>\n            <stop offset=\"100%\" stop-color=\"#4aa3e0\"/>\n          </linearGradient></defs>\n          <circle cx=\"43\" cy=\"43\" r=\"${r}\" stroke=\"#e6eef9\" stroke-width=\"${stroke}\" fill=\"none\"></circle>\n          <circle id=\"progressRing\" cx=\"43\" cy=\"43\" r=\"${r}\" stroke=\"url(#g1)\" stroke-width=\"${stroke}\" fill=\"none\" stroke-linecap=\"round\" stroke-dasharray=\"${c} ${c}\" stroke-dashoffset=\"0\" transform=\"rotate(-90 43 43)\"></circle>\n        </svg>\n        <div class=\"timer-text\" id=\"timerText\">60s</div>\n      `;
+    }
+    createTimerSVG();
+
+    function startTimer(){
+      stopTimer();
+      timeLeft = TIME_PER_Q;
+      updateTimerUI();
+      timer = setInterval(()=>{
+        if(timeLeft>0){ timeLeft--; updateTimerUI(); }
+        else{ // time up -> auto advance
+          // save no-answer as null if not answered
+          if(typeof answers[currentIndex]==='undefined') answers[currentIndex]=null;
+          updateProgress();
+          if(currentIndex < currentSubject.questions.length-1){ currentIndex++; renderQuestion(); resetTimer(); startTimer(); }
+          else{ finishBtn.click(); }
+        }
+      },1000);
+    }
+    function stopTimer(){ if(timer) { clearInterval(timer); timer=null; } }
+    function resetTimer(){ stopTimer(); timeLeft = TIME_PER_Q; updateTimerUI(); }
+
+    function updateTimerUI(){
+      const el = document.getElementById('progressRing');
+      const size=86; const stroke=8; const r=(size-stroke)/2; const c=2*Math.PI*r;
+      const percent = timeLeft/TIME_PER_Q;
+      const offset = c * (1 - percent);
+      if(el) el.style.strokeDashoffset = offset;
+      const txt = document.getElementById('timerText'); if(txt) txt.textContent = timeLeft + 's';
+    }
+
+    // --- Text to Speech ---
+    function speakText(text){ /* auto-read question but gentle: only if user has used TTS */ }
+    let ttsEnabled=false;
+    ttsBtn.addEventListener('click',()=>{
+      ttsEnabled = !ttsEnabled; ttsBtn.style.background = ttsEnabled? 'linear-gradient(90deg,var(--accent),#4aa3e0)':'white';
+      if(ttsEnabled){ const q = currentSubject.questions[currentIndex]; speakFull(q.q, q.choices); }
+    });
+
+    function speakFull(q, choices){
+      if(!('speechSynthesis' in window)) return;
+      const utter = new SpeechSynthesisUtterance(q + '. ' + choices.map((c,i)=>String.fromCharCode(65+i)+'. '+c).join('. '));
+      utter.rate = 0.95; utter.lang = 'en-US';
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    }
+
+    function speakTextIfEnabled(text){ if(ttsEnabled) { const u=new SpeechSynthesisUtterance(text); u.rate=0.95; window.speechSynthesis.speak(u);} }
+
+    // override earlier auto speak to use enabled flag
+    function speakText(qAndChoices){ if(ttsEnabled) speakFull(currentSubject.questions[currentIndex].q, currentSubject.questions[currentIndex].choices); }
+
+    // manual tts button reads current question
+    ttsBtn.addEventListener('click',()=>{
+      if(currentSubject && presenterEl.classList.contains('active')){
+        const q = currentSubject.questions[currentIndex]; speakFull(q.q, q.choices);
+      }
+    });
+
+    // full screen
+    fsBtn.addEventListener('click',()=>{
+      if(!document.fullscreenElement){ document.documentElement.requestFullscreen?.(); fsBtn.textContent='⤢'; }
+      else{ document.exitFullscreen?.(); fsBtn.textContent='⤢'; }
+    });
+
+    // init
+    renderSubjects();
+
+    // keyboard navigation
+    document.addEventListener('keydown',(e)=>{
+      if(!presenterEl.classList.contains('active')) return;
+      if(e.key==='ArrowRight') nextBtn.click();
+      if(e.key==='ArrowLeft') prevBtn.click();
+      if(e.key===' '){ e.preventDefault(); pauseBtn.click(); }
+    });
+
+  </script>
+</body>
+</html>
