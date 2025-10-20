@@ -1,560 +1,243 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Second Quarter Examination — Presenter</title>
-  <style>
-    :root{
-      --bg:#071634;
-      --card:#081228;
-      --accent:#0ea5a5;
-      --gold:#F59E0B;
-      --muted:#9aa7bf;
-      --text:#ffffff;
-      --timer-size:130px;   /* timer diameter */
-      --timer-gap:28px;     /* safe gap so timer doesn't overlap */
-    }
-    html,body{height:100%;}
-    body{
-      margin:0;
-      background:linear-gradient(180deg,var(--bg), #04203a 120%);
-      color:var(--text);
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-      overflow:hidden;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam Presenter System</title>
+<style>
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background-color: #001f3f;
+    color: white;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  #dashboard, #exam-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+  #dashboard button {
+    background-color: #ffc107;
+    border: none;
+    color: #001f3f;
+    font-weight: bold;
+    padding: 15px 40px;
+    margin: 15px;
+    border-radius: 10px;
+    font-size: 22px;
+    cursor: pointer;
+  }
+  #dashboard button:hover { background-color: #ffdb58; }
 
-    .app{width:100%;max-width:1400px}
+  #question-box {
+    text-align: left;
+    width: 80%;
+    max-width: 1200px;
+    font-size: 26px;
+    font-weight: bold;
+    margin-top: 100px;
+  }
+  .choice {
+    margin: 15px 0;
+    font-size: 24px;
+    font-weight: normal;
+  }
+  .choice span {
+    font-weight: bold;
+    margin-right: 10px;
+  }
 
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-    .brand{display:flex;gap:16px;align-items:center}
-    .logo{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#0ea5a5,#2563eb);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:18px}
-    h1{font-size:22px;margin:0;color:var(--text)}
-    .subtitle{color:var(--muted);font-size:13px}
+  #timer {
+    position: fixed;
+    top: 30px;
+    left: 30px;
+    background: none;
+    border: 6px solid gold;
+    border-radius: 50%;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: bold;
+    color: gold;
+  }
 
-    .card{background:transparent;border-radius:12px;padding:12px}
+  #controls {
+    position: fixed;
+    bottom: 30px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+  #controls button {
+    background-color: #ffc107;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #001f3f;
+  }
+  #controls button:hover { background-color: #ffdb58; }
 
-    /* Dashboard */
-    .dashboard{display:flex;gap:14px;flex-wrap:wrap}
-    .subject{flex:1 1 220px;min-width:220px;padding:16px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);cursor:pointer;display:flex;flex-direction:column;gap:8px}
-    .subject h3{margin:0;font-size:18px;color:var(--text)}
-    .subject p{margin:0;color:var(--muted);font-size:13px}
-    .select-btn{margin-top:8px;padding:10px 14px;background:var(--accent);color:var(--card);border-radius:10px;border:none;font-weight:800;font-size:14px;cursor:pointer}
-
-    /* Presenter */
-    #presenter{display:none;margin-top:18px;position:relative;height:75vh}
-    #presenter.active{display:block}
-
-    /* Timer fixed (top-left) */
-    #timerWrap{
-      position:fixed;
-      top:18px;
-      left:18px;
-      z-index:1400;
-      display:flex;
-      align-items:center;
-      gap:12px;
-      pointer-events:auto;
-    }
-    .timerCircle{
-      width:var(--timer-size);
-      height:var(--timer-size);
-      border-radius:50%;
-      background:linear-gradient(180deg,#06233a,#021826);
-      display:grid;
-      place-items:center;
-      border:10px solid rgba(245,158,11,0.14);
-      box-shadow: 0 18px 50px rgba(0,0,0,0.6), inset 0 -8px 30px rgba(0,0,0,0.25);
-    }
-    .timerText{font-size:36px;font-weight:900;color:var(--gold);text-shadow:0 3px 14px rgba(0,0,0,0.6)}
-    .tinyControls{display:flex;flex-direction:column;gap:8px}
-    .tinyBtn{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));color:var(--text);border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:10px;cursor:pointer;font-weight:800;min-width:56px;text-align:center}
-
-    /* Presenter body padded to avoid timer overlap */
-    .presenterBody{display:flex;gap:28px;align-items:flex-start;padding-left: calc(var(--timer-size) + var(--timer-gap));height:100%;box-sizing:border-box}
-
-    .slide{
-      flex:1;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:36px;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.03);height:100%;overflow:auto;
-    }
-
-    .q-number{color:var(--muted);font-size:15px;margin-bottom:12px;font-weight:800}
-    .q-text{
-      font-size:40px;line-height:1.15;margin-bottom:26px;font-weight:900;color:var(--text);
-      text-shadow:0 6px 20px rgba(0,0,0,0.6)
-    }
-    .options{display:block}
-    .option{margin:12px 0;font-size:26px;color:var(--text);font-weight:800;background:rgba(255,255,255,0.02);padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);display:inline-block}
-
-    /* Controls area centered bottom (fixed) */
-    .controlsFixed{
-      position:fixed;
-      left:50%;
-      transform:translateX(-50%);
-      bottom:22px;
-      z-index:1500;
-      display:flex;
-      gap:12px;
-      align-items:center;
-      justify-content:center;
-      padding:8px 12px;
-      background:linear-gradient(180deg, rgba(0,0,0,0.1), rgba(255,255,255,0.02));
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,0.04);
-      box-shadow:0 10px 30px rgba(0,0,0,0.6);
-    }
-    .controlBtn{padding:12px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);cursor:pointer;font-weight:900;font-size:15px}
-    .controlBtn.primary{background:var(--gold);color:#071634;border:none;box-shadow:0 8px 18px rgba(245,158,11,0.12)}
-
-    .progressSmall{font-size:14px;color:var(--muted);margin-left:8px}
-
-    @media (max-width:1000px){
-      .presenterBody{flex-direction:column;padding-left:18px}
-      #timerWrap{left:auto;right:18px;top:18px}
-      .timerCircle{width:110px;height:110px}
-      .timerText{font-size:28px}
-      .q-text{font-size:30px}
-      .option{font-size:18px}
-      .controlsFixed{flex-wrap:wrap;padding:10px}
-    }
-
-    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-  </style>
+  #startBtn {
+    background-color: #28a745;
+    color: white;
+    padding: 15px 50px;
+    font-size: 22px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    margin-top: 40px;
+  }
+</style>
 </head>
 <body>
 
-  <div class="app">
-    <header>
-      <div class="brand">
-        <div class="logo">SQ</div>
-        <div>
-          <h1>Second Quarter Examination</h1>
-          <div class="subtitle">Presenter-only • 60s per question • Bold & large</div>
-        </div>
-      </div>
-      <div class="subtitle">Auto-advance • TTS • Fullscreen • Restart</div>
-    </header>
+<div id="dashboard">
+  <h1 style="font-size:40px; color:#ffc107;">Exam Presenter System</h1>
+  <button onclick="startExam('english7')">English 7 Exam</button>
+  <button onclick="startExam('cnf12')">Creative Nonfiction 12 Exam</button>
+</div>
 
-    <main class="card">
-      <!-- Dashboard -->
-      <div id="dashboard" class="dashboard">
-        <div class="subject" data-id="eng7">
-          <h3>English 7</h3>
-          <p>50-item exam — ready for presentation</p>
-          <button class="select-btn" onclick="selectSubject('eng7')">Select</button>
-        </div>
-        <div class="subject" data-id="cnf12">
-          <h3>CNF 12</h3>
-          <p>50-item Creative Nonfiction exam</p>
-          <button class="select-btn" onclick="selectSubject('cnf12')">Select</button>
-        </div>
-        <div class="subject" data-id="ppg11">
-          <h3>PPG 11</h3>
-          <p>(empty)</p>
-          <button class="select-btn" onclick="selectSubject('ppg11')">Select</button>
-        </div>
-        <div class="subject" data-id="mil12">
-          <h3>MIL 12</h3>
-          <p>(empty)</p>
-          <button class="select-btn" onclick="selectSubject('mil12')">Select</button>
-        </div>
-      </div>
-
-      <!-- Start area -->
-      <div id="startArea" style="margin-top:18px; display:none">
-        <button id="startExamBtn" class="select-btn" style="font-size:16px;padding:12px 20px" onclick="startExam()">Start Exam</button>
-      </div>
-
-      <!-- Presenter -->
-      <section id="presenter" aria-hidden="true">
-        <div id="timerWrap" style="display:none">
-          <div class="timerCircle" role="timer" aria-live="polite">
-            <div class="timerText" id="timerText">60s</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
-            <button id="ttsBtn" class="tinyBtn" title="Read question aloud">🔊 Read</button>
-            <button id="fsBtn" class="tinyBtn" title="Toggle full screen">⛶</button>
-            <div style="font-size:12px;color:var(--muted);margin-top:6px">Time left</div>
-          </div>
-        </div>
-
-        <div class="presenterBody" id="presenterBody">
-          <div class="slide" id="slide">
-            <div class="q-number" id="qNumber">Question 1 of 50</div>
-            <div class="q-text" id="qText">Loading…</div>
-            <div class="options" id="options"></div>
-          </div>
-        </div>
-
-        <!-- Controls centered fixed below -->
-        <div class="controlsFixed" role="region" aria-label="Exam controls">
-          <button id="prevBtn" class="controlBtn" onclick="prevQuestion()">◀ Prev</button>
-          <button id="pauseBtn" class="controlBtn" onclick="togglePause()">Pause</button>
-          <button id="nextBtn" class="controlBtn primary" onclick="nextQuestion()">Next ▶</button>
-          <button id="restartBtn" class="controlBtn" onclick="restartExam()" style="display:none">Restart</button>
-          <button id="readBtn" class="controlBtn" onclick="speakCurrent()">🔊 Read</button>
-          <button id="fullBtn" class="controlBtn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
-          <div class="progressSmall" id="progressSmall">0 / 0</div>
-        </div>
-      </section>
-
-    </main>
+<div id="exam-container" style="display:none; flex-direction:column; align-items:center;">
+  <div id="timer">60</div>
+  <div id="question-box"></div>
+  <div id="controls">
+    <button onclick="prevQuestion()">Previous</button>
+    <button onclick="nextQuestion()">Next</button>
+    <button onclick="pauseTimer()">Pause</button>
+    <button onclick="readQuestion()">Read</button>
+    <button onclick="restartExam()">Restart</button>
+    <button onclick="toggleFullscreen()">Fullscreen</button>
   </div>
+</div>
 
-  <script>
-    /* ===========================
-       Data: English 7 & CNF 12
-       =========================== */
-    const DATA = {
-      eng7: [
-{q:"In the story My Father Goes to Court, what is the main reason the father is taken to court?", a:["He stole food from a wealthy family.","He borrowed money and didn’t repay it.","He trespassed on the neighbor's property.","He was accused of enjoying the smell of the rich family's food."]},
-{q:"How does the wealthy family in the story behave towards the poor family?", a:["They ignore them completely.","They accuse them of stealing their wealth.","They invite them over for dinner frequently.","They resent them for \"stealing\" the smell of their food."]},
-{q:"What is the father’s response to the accusations in court?", a:["He pays the family in cash.","He apologizes and promises to pay a fine.","He denies everything and argues with the judge.","He shakes coins in his hand to \"repay\" the family with the sound of money."]},
-{q:"What theme is explored in the story \"My Father Goes to Court\"?", a:["The importance of wealth and status","The harm of stealing food from neighbors","The value of family and humor in hard times","The dangers of going to court without a lawyer"]},
-{q:"What is the judge’s reaction to the father’s defense in court?", a:["He fines the father.","He finds the situation laughable.","He rules in favor of the wealthy family.","He becomes angry and dismisses the case."]},
-{q:"Which of the following is an example of internal conflict?", a:["A village faces destruction after a powerful storm hit.","A firefighter rescues a family from a burning building.","A programmer works to fix a glitch in a new software program.","A student struggles with fear of public speaking before an important presentation."]},
-{q:"Which of the following BEST represents man vs. society conflict?", a:["A scientist tries to invent new technology","A hero battles a supernatural creature to save the world","A hiker braves the wilderness to survive after getting lost","A young woman stands up against unjust laws in her town"]},
-{q:"In a man vs. technology conflict, what does the main character typically struggles against?", a:["His own beliefs and values","The power of natural disasters","The rules and expectations of society","An advancement of human innovation"]},
-{q:"What is the main theme of the story How My Brother Leon Brought Home a Wife?", a:["The challenges of rural life","The sacrifices one makes for love","The importance of family traditions","The struggle of city and rural cultures"]},
-{q:"Who is the narrator of the story How My Brother Leon Brought Home a Wife?", a:["Baldo","Labang","Leon","Maria"]},
-{q:"How does Baldo feel about Maria as they journey to his home?", a:["He is indifferent","He is openly critical","He is curious and observant","He is skeptical and judgmental"]},
-{q:"What test did Leon’s father use to gauge Maria’s character?", a:["Discussing her views on rural life","Asking her to cook a traditional meal","Observing her interactions with their pet","Sending Baldo and Maria on an alternative, challenging route"]},
-{q:"How does Maria react to the countryside and rural setting during her journey with Baldo?", a:["She feels detached and homesick","She expresses hesitation and fear","She appreciates and admires the scenery","She complains about the discomfort"]},
-{q:"Bienvenido N. Santos wrote Scent of Apples drawing from his experiences as a Filipino in the United States. During which period did he move to the U.S., influencing the themes of his work?", a:["After World War II","Before World War I","During the 1960s","During the Spanish colonial period"]},
-{q:"The story of Scent of Apples reflects the experience of Filipino immigrants in the U.S. during which historical period, when many Filipinos sought opportunities abroad due to limited prospects at home?", a:["Post-World War II","During the Philippine Revolution","During the Philippine-American War","Early American occupation of the Philippines"]},
-{q:"What is the primary theme explored in the story Scent of Apples?", a:["The power of friendship","The benefits of technology","The importance of education","The hardships of immigrant life"]},
-{q:"In \"Scent of Apples,\" the protagonist reflects on his past. What does the smell of apples symbolize for him?", a:["Success and wealth","Freedom and adventure","Nostalgia and lost dreams","Friendliness and community"]},
-{q:"How does the setting of the story contribute to its overall message?", a:["It creates a sense of urgency","It highlights the beauty of nature","It emphasizes the importance of family","It showcases the isolation felt by the protagonist"]},
-{q:"What aspect of Filipino culture does Roces primarily emphasize in his essay We Filipinos Are Mild Drinkers?", a:["The influence of Western culture","The importance of family gatherings","The social drinking habits of Filipinos","The culinary traditions of the Philippines"]},
-{q:"In \"We Filipinos Are Mild Drinkers,\" how does Roces describe the Filipino attitude towards alcohol consumption?", a:["As a means to escape reality","As a competition among friends","As a necessary part of business deals","As a bonding activity that reflects hospitality"]},
-{q:"Which local color element is prominent in Roces’ portrayal of Filipino drinking culture?", a:["The use of rice as a staple food","The architecture of traditional homes","The geographical landscape of the Philippines","The use of humor and laughter in social interactions"]},
-{q:"What underlying theme does Roces convey about Filipino identity through their drinking culture?", a:["Drinking is a sign of weakness","Filipinos cannot handle alcohol","Alcohol consumption is a new trend","Social interactions define Filipino relationships"]},
-{q:"How does Roces position Filipino drinking habits in contrast to those of other cultures?", a:["He portrays Filipinos as sober individuals","He suggests Filipinos drink more than others","He implies that Filipinos drink more moderately and socially","He emphasizes that drinking is culturally irrelevant for Filipinos"]},
-{q:"Which of the following is the primary purpose of a narrative text?", a:["To inform the reader about a specific topic","To persuade the reader to adopt a particular viewpoint","Both A and B","None of the Above"]},
-{q:"What type of literary text is primarily intended to convey information about real events, people, and facts?", a:["Drama","Fiction","Non-fiction","Poetry"]},
-{q:"Which literary form is characterized by its use of rhythmic and metaphorical language, often expressing emotions and ideas in a condensed format?", a:["Essay","Novel","Poetry","Short Story"]},
-{q:"What is the primary purpose of writing a persuasive text?", a:["Describe experiences","Narrate a fictional story","Provide detailed analyses","Convince the audience to accept viewpoint"]},
-{q:"Which of the following BEST describes a drama?", a:["A personal account of real-life experiences","A text meant for reading silently and reflecting","A written work intended for performance, comprising dialogue and action","Both B and C"]},
-{q:"Which of the following is the primary purpose of the prewriting stage?", a:["To finalize the written piece","To correct grammatical errors","To generate ideas and plan the content","To format the document for submission"]},
-{q:"What is the main goal during the drafting stage?", a:["To proofread and correct mistakes","To ensure that all sources are cited correctly","To improve the vocabulary and style of the piece","To create a rough version of the writing without worrying about perfection"]},
-{q:"During which stage of the writing process do writers focus on reorganizing and enhancing the content of their draft?", a:["Drafting","Editing","Prewriting","Revising"]},
-{q:"What is the primary focus during the editing stage of the writing process?", a:["Developing a thesis statement","Gathering feedback from peers","Exploring different writing techniques","Correcting grammatical, punctuation, and spelling errors"]},
-{q:"Which of the following activities is MOST likely to occur during the prewriting phase?", a:["Reading through a completed draft","Checking for typos in a final version","Outlining main ideas and arguments","Polishing the language style of the writing"]},
-{q:"What is the purpose of imagery in poetry?", a:["To add rhymes","To repeat sounds","To use simple language","To create vivid pictures in mind"]},
-{q:"What sense is MOST commonly evoked in the line: \"The scent of fresh rain on the earth\"?", a:["Sight","Smell","Sound","Touch"]},
-{q:"How does the line \"The wind howled in the night\" use personification?", a:["By using a rhyme","By describing the sound of wind","By giving wind human-like qualities","By comparing wind to a howling animal"]},
-{q:"Why do poets use descriptive imagery in their work?", a:["To add rhymes","To confuse the reader","To lengthen the poem","To create vivid pictures or feelings"]},
-{q:"What does the form of a poem refer to?", a:["The central idea","The use of sound devices","The figurative language used","The structure and design including rhyme and rhythm"]},
-{q:"What is the basic unit of a poem, often characterized by its length and rhythm?", a:["Line","Stanza","Syllable","Word"]},
-{q:"How is alliteration BEST described?", a:["As the main idea of a poem","As the repetition of vowel sounds","As a comparison using \"like\" or \"as\"","As the repetition of the same initial consonant sounds"]},
-{q:"What is NOT considered a sound device in poetry?", a:["Alliteration","Imagery","Rhyme","Rhythm"]},
-{q:"What does the prefix \"anti\" mean?", a:["Against","Before","Not","Over"]},
-{q:"What does the suffix \"-less\" in the word \"hopeless\" indicate?", a:["Able to","Full of","In manner of","Lacking"]},
-{q:"How can a reader use context clues to understand an unfamiliar word in a poem?", a:["By looking at the title of the poem","By researching the poet's biography","By considering the length of the poem","By examining the surrounding words and phrases"]},
-{q:"How does personification enhance a poem?", a:["By comparing unlike things","By repeating consonant sounds","By using exaggerated statements","By giving human qualities to non-human things"]},
-{q:"What is the central idea or message of a poem called?", a:["Line","Rhythm","Stanza","Theme"]},
-{q:"Why is rhyme important in poetry?", a:["To confuse the reader","To make the poem longer","To create a musical quality","To make the poem more difficult to read"]},
-{q:"How does the form of a poem influence its overall structure?", a:["By using imagery","By adding symbolism","By expressing the theme","By determining the rhyme and rhythm"]},
-{q:"What characterizes dramatic poetry?", a:["Telling a story","Using complex imagery","Expressing personal emotions","Featuring characters and dialogue"]},
-{q:"How is lyric poetry BEST defined?", a:["A poetry that tells a story.","A poetry that is performed on stage.","A poetry that uses strict rhyme schemes.","A poetry that expresses the speaker's personal feelings and thoughts."]}
-      ],
-      cnf12: [
-{q:"What is the primary purpose of creative nonfiction?", a:["To inform the reader",     "To persuade the reader","To entertain with fictional stories","To present facts with a narrative style"]},
-{q:"Which of the following is an example of creative nonfiction?", a:["Autobiography","Historical drama","Mythology","Science fiction"]},
-{q:"Who is the \"I\" in a first-person narrative?", a:["The antagonist","The author","The narrator","The protagonist"]},
-{q:"What element is essential in creative nonfiction?", a:["Fantasy world-building","Imaginary plot","Mythical characters","Real-life experiences"]},
-{q:"What does the term \"memoir\" refer to?", a:["A collection of poems","A fictional story","A news article","A personal account of events"]},
-{q:"How does creative nonfiction combine factual accuracy with storytelling?", a:["By using fictional dialogue","By adding fictional elements","By using artistic storytelling","By creating unrealistic settings"]},
-{q:"How does descriptive language function in creative nonfiction?", a:["It simplifies the text","It confuses the reader","It adds fictional elements","It paints vivid pictures in the mind"]},
-{q:"What is a common feature of a personal essay?", a:["Imaginary characters","Objective analysis","Personal reflection","Scientific data"]},
-{q:"What BEST defines a \"narrative\"?", a:["A list of facts","A chronological story","A persuasive argument","A collection of opinions"]},
-{q:"How is the author expected to approach the truth in creative nonfiction?", a:["By avoiding any personal opinions","By writing in a detached, unemotional style","By inventing facts to make the story interesting","By sticking to the truth while using a creative approach"]},
-{q:"Which of the following is NOT a subgenre of creative nonfiction?", a:["Biography","Memoir","Personal essay","Science fiction"]},
-{q:"Why is tone important in creative nonfiction?", a:["It is irrelevant in nonfiction","It distracts the reader from the facts","It hides the true meaning of the text","It sets the mood and conveys the author's attitude"]},
-{q:"Which point of view is commonly used in memoirs?", a:["First-person","Second-person","Third-person limited","Third-person omniscient"]},
-{q:"What does the term \"theme\" refer to in creative nonfiction?", a:["The plot's twist","The setting of the story","The characters' dialogue","The underlying message or main idea"]},
-{q:"Why is dialogue used in creative nonfiction?", a:["To add humor","To confuse the reader","To create fictional conversations","To show interactions with real people"]},
-{q:"How does the relationship between the author and narrator differ in creative nonfiction?", a:["They are always the same person","The author creates a fictional narrator","The narrator is a purely objective observer","The author and narrator may be the same, thus, perspective is crafted for storytelling"]},
-{q:"What technique involves recalling and writing about past experiences in creative nonfiction?", a:["Allegory","Flashback","Foreshadowing","Imagery"]},
-{q:"What is the primary difference between an autobiography and a memoir?", a:["An autobiography is always shorter than a memoir","An autobiography is fictional, while a memoir is factual","A memoir is written in third-person, while an autobiography is in first-person","An autobiography covers the author's entire life; a memoir focuses on specific events"]},
-{q:"What does the term \"literary journalism\" refer to?", a:["Creating fictional news stories","Reporting news in a poetic style","Writing novels based on real events","Writing news articles with a narrative approach"]},
-{q:"How is \"voice\" defined in creative nonfiction?", a:["The loudness of the text","The dialogue between characters","The physical voice of the narrator","The author's writing style and personality as conveyed in the text"]},
-{q:"What is an example of a structural device used in creative nonfiction?", a:["Alliteration","Hyperbole","Metaphor","Nonlinear narrative"]},
-{q:"How does creative nonfiction differ from traditional nonfiction?", a:["It focuses more on academic writing","It uses fictional elements to tell a story","It blends factual accuracy and narrative storytelling techniques","It relies solely on factual reporting without any creative embellishment"]},
-{q:"Why is symbolism used in creative nonfiction?", a:["To create confusion","To replace factual information","To introduce fictional elements to the story","To provide deeper meaning to real-life events or objects"]},
-{q:"How do sensory details function in creative nonfiction?", a:["They are used to create fictional settings","They are unnecessary in nonfiction writing","They distract from the factual accuracy of the story","They enhance the reader's connection to the narrative by appealing to the senses"]},
-{q:"How does the author typically present their point of view in a personal essay?", a:["Through the use of fictional characters","By analyzing the perspectives of others","By writing in a detached and objective manner","By sharing their personal experiences and reflections"]},
-{q:"What is an example of a hybrid form of creative nonfiction?", a:["Fantasy novel","Historical fiction","Lyric essay","Science report"]},
-{q:"How does \"pacing\" affect a creative nonfiction narrative?", a:["It dictates the length of the text","It is irrelevant in nonfiction writing","It refers to the number of characters in the story","It determines how quickly or slowly the narrative unfolds"]},
-{q:"How does an author establish credibility in creative nonfiction?", a:["By avoiding personal opinions","By writing in an overly emotional tone","By using highly creative, fictional elements","By thoroughly researching and accurately representing facts"]},
-{q:"What is a common challenge in writing creative nonfiction?", a:["Avoiding any personal input","Creating fictional characters","Writing without any emotional engagement","Maintaining factual accuracy while using narrative techniques"]},
-{q:"Why is a reflective voice important in a memoir?", a:["To exaggerate details for effect","To describe only external events","To distance the author from the events","To analyze and interpret personal experiences"]},
-{q:"What distinguishes literary nonfiction from other types of nonfiction?", a:["Use of factual information","A focus solely on academic writing","An absence of personal perspective","Incorporation of literary techniques such as imagery, metaphor, and symbolism"]},
-{q:"What is the significance of \"personal truth\" in creative nonfiction?", a:["It is the same as objective truth","It refers to a fictional version of events","It disregards factual accuracy in favor of storytelling","It emphasizes the subjective experiences and interpretations of the author"]},
-{q:"How are ethics important in creative nonfiction writing?", a:["They govern fictional storytelling","They involve the use of satire and irony","They allow creative freedom to alter facts for a better story","They guide the truthful representation of facts and respect for others in writing"]},
-{q:"How can an author effectively engage the reader in creative nonfiction?", a:["By avoiding any form of dialogue","By using a dry and objective tone","By strictly following a chronological order","By blending factual content with a compelling narrative"]},
-{q:"Why is research important in writing creative nonfiction?", a:["To avoid personal bias","To find fictional elements to enhance the story","To remove any creative elements from the text","To ensure factual accuracy and provide a solid foundation for the narrative"]},
-{q:"How can an author maintain narrative tension in a nonfiction story?", a:["By simplifying the plot","By using a nonlinear timeline","By avoiding any form of conflict","By revealing all information at once"]},
-{q:"When is it appropriate to use a nonlinear narrative in creative nonfiction?", a:["When the story lacks excitement","When writing a purely factual report","When the author wants to confuse the reader","When it helps to enhance the theme or provide deeper insight"]},
-{q:"Why might an author choose to write in second-person point of view in creative nonfiction?", a:["To avoid personal reflection","To make the narrative more formal","To directly involve the reader in the narrative","To create a sense of distance between the author and reader"]},
-{q:"What challenge does an author face when writing about sensitive or controversial topics in creative nonfiction?", a:["Deciding whether to fictionalize the story","Ensuring the story is purely entertaining","Avoiding the use of any narrative techniques","Balancing honesty with respect for those involved"]},
-{q:"How does the use of metaphors enhance creative nonfiction?", a:["By replacing factual details","By simplifying complex ideas","By adding layers of meaning to the narrative","By distracting the reader from the main point"]},
-{q:"What is the role of reflection in a personal essay?", a:["To avoid emotional engagement","To recount events without any analysis","To entertain the reader with fictional elements","To analyze and provide deeper insights into the author's experiences"]},
-{q:"Why might an author use multiple perspectives in a piece of creative nonfiction?", a:["To avoid bias","To confuse the reader","To add fictional elements to the narrative","To provide a more comprehensive view of the subject"]},
-{q:"How does an author achieve authenticity in creative nonfiction?", a:["By including purely fictional content","By relying solely on other people’s accounts","By avoiding personal involvement in the narrative","By staying true to their voice and experiences while representing facts accurately"]},
-{q:"Why is it important to consider the audience when writing creative nonfiction?", a:["To avoid using creative language","To limit the use of descriptive details","To ensure the narrative is as simple as possible","To tailor the narrative to their interests and expectations"]},
-{q:"What does it mean to \"show, don't tell\" in creative nonfiction writing?", a:["To focus solely on dialogue","To avoid descriptive language","To list facts without elaboration","To describe events with vivid details rather than just stating facts"]},
-{q:"How can an author effectively conclude a piece of creative nonfiction?", a:["By introducing new characters","By ending abruptly without resolution","By summarizing every detail in the story","By leaving the reader with a lasting impression or insight"]},
-{q:"Why might an author use flashbacks in a creative nonfiction piece?", a:["To confuse the timeline","To introduce fictional elements","To avoid discussing the present","To provide background information or context to current events"]},
-{q:"What is a challenge when writing about real people in creative nonfiction?", a:["Creating entirely fictional dialogue","Ensuring the narrative remains fictional","Making the characters seem more realistic","Balancing truthfulness with respect for privacy and sensitivity"]},
-{q:"How does the theme of a creative nonfiction piece differ from the plot?", a:["The theme and plot are the same","The theme is a list of characters, while the plot is the setting","The theme is the central idea or message, while the plot is the sequence of events","The theme is the chronological order of events, while the plot is the author's opinion"]}
-      ],
-      ppg11: [],
-      mil12: []
-    };
+<script>
+const exams = {
+  english7: [
+    {
+      q: "In the story 'My Father Goes to Court', what is the main reason the father is taken to court?",
+      c: ["He stole food from a wealthy family.",
+          "He borrowed money and didn’t repay it.",
+          "He trespassed on the neighbor's property.",
+          "He was accused of enjoying the smell of the rich family's food."]
+    },
+    {
+      q: "How does the wealthy family in the story behave towards the poor family?",
+      c: ["They ignore them completely.",
+          "They accuse them of stealing their wealth.",
+          "They invite them over for dinner frequently.",
+          "They resent them for 'stealing' the smell of their food."]
+    },
+    // ... Continue adding all 50 English 7 questions here
+  ],
 
-    /* ===========================
-       App State
-       =========================== */
-    let currentSubject = null;
-    let currentIndex = 0;
-    const TIME_PER_Q = 60;
-    let timeLeft = TIME_PER_Q;
-    let timerId = null;
-    let isPaused = false;
+  cnf12: [
+    {
+      q: "Which of the following is a key element of creative nonfiction?",
+      c: ["Imagination only", "Factual accuracy", "Rhyming", "Dialogue only"]
+    },
+    // ... Continue adding all 50 CNF 12 questions here
+  ]
+};
 
-    /* DOM */
-    const dashboardEl = document.getElementById('dashboard');
-    const startArea = document.getElementById('startArea');
-    const startExamBtn = document.getElementById('startExamBtn');
-    const presenter = document.getElementById('presenter');
-    const timerWrap = document.getElementById('timerWrap');
-    const timerText = document.getElementById('timerText');
-    const qNumberEl = document.getElementById('qNumber');
-    const qTextEl = document.getElementById('qText');
-    const optionsEl = document.getElementById('options');
-    const progressSmall = document.getElementById('progressSmall');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const pauseBtn = document.getElementById('pauseBtn');
-    const restartBtn = document.getElementById('restartBtn');
-    const ttsBtn = document.getElementById('ttsBtn');
-    const fsBtn = document.getElementById('fsBtn');
-    const readBtn = document.getElementById('readBtn');
-    const fullBtn = document.getElementById('fullBtn');
+let currentExam = [];
+let currentIndex = 0;
+let timer;
+let timeLeft = 60;
+let paused = false;
 
-    /* ===========================
-       Subject selection
-       =========================== */
-    function selectSubject(id){
-      currentSubject = id;
-      startArea.style.display = 'block';
-      startExamBtn.focus();
-    }
-    window.selectSubject = selectSubject;
+function startExam(subject) {
+  currentExam = exams[subject];
+  currentIndex = 0;
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('exam-container').style.display = 'flex';
+  displayQuestion();
+  startTimer();
+}
 
-    /* ===========================
-       Start / Render / Navigation
-       =========================== */
-    function startExam(){
-      if(!currentSubject) return;
-      document.getElementById('dashboard').style.display = 'none';
-      document.querySelector('header').style.display = 'none';
-      startArea.style.display = 'none';
+function displayQuestion() {
+  const q = currentExam[currentIndex];
+  if (!q) return;
+  const box = document.getElementById('question-box');
+  box.innerHTML = `
+    <div>${currentIndex + 1}. <b>${q.q}</b></div>
+    <div class="choice"><span>A.</span> ${q.c[0]}</div>
+    <div class="choice"><span>B.</span> ${q.c[1]}</div>
+    <div class="choice"><span>C.</span> ${q.c[2]}</div>
+    <div class="choice"><span>D.</span> ${q.c[3]}</div>
+  `;
+}
 
-      presenter.classList.add('active');
-      presenter.setAttribute('aria-hidden','false');
-      timerWrap.style.display = 'flex';
-
-      // set subject label (small)
-      const subjectLabelEl = document.getElementById('subjectLabel');
-      if(subjectLabelEl) subjectLabelEl.textContent = 'Subject: ' + (currentSubject === 'eng7' ? 'English 7' : currentSubject);
-
-      currentIndex = 0;
-      renderQuestion();
-      startTimer();
-    }
-    window.startExam = startExam;
-
-    function renderQuestion(){
-      const questions = DATA[currentSubject] || [];
-      if(!questions || questions.length === 0){
-        qNumberEl.textContent = 'No questions';
-        qTextEl.textContent = 'This subject has no questions loaded.';
-        optionsEl.innerHTML = '';
-        progressSmall.textContent = '0 / 0';
-        return;
-      }
-      const item = questions[currentIndex];
-      qNumberEl.textContent = `Question ${currentIndex+1} of ${questions.length}`;
-      qTextEl.textContent = item.q;
-      optionsEl.innerHTML = '';
-      item.a.forEach((opt,i)=>{
-        const div = document.createElement('div');
-        div.className = 'option';
-        div.textContent = `${String.fromCharCode(65+i)}. ${opt}`;
-        optionsEl.appendChild(div);
-      });
-      progressSmall.textContent = `${currentIndex+1} / ${questions.length}`;
-    }
-
-    function prevQuestion(){
-      if(currentIndex > 0){
-        currentIndex--;
-        renderQuestion();
-        resetTimer();
-        startTimer();
+function startTimer() {
+  timeLeft = 60;
+  document.getElementById('timer').textContent = timeLeft;
+  clearInterval(timer);
+  timer = setInterval(() => {
+    if (!paused) {
+      timeLeft--;
+      document.getElementById('timer').textContent = timeLeft;
+      if (timeLeft <= 0) {
+        nextQuestion();
       }
     }
-    window.prevQuestion = prevQuestion;
+  }, 1000);
+}
 
-    function nextQuestion(){
-      const questions = DATA[currentSubject] || [];
-      if(currentIndex < questions.length - 1){
-        currentIndex++;
-        renderQuestion();
-        resetTimer();
-        startTimer();
-      } else {
-        finishPresentation();
-      }
-    }
-    window.nextQuestion = nextQuestion;
+function nextQuestion() {
+  if (currentIndex < currentExam.length - 1) {
+    currentIndex++;
+    displayQuestion();
+    startTimer();
+  } else {
+    alert("Exam Finished!");
+    restartExam();
+  }
+}
 
-    function finishPresentation(){
-      stopTimer();
-      qNumberEl.textContent = 'Presentation Finished';
-      qTextEl.innerHTML = '<strong>End of exam.</strong>';
-      optionsEl.innerHTML = '';
-      restartBtn.style.display = 'inline-block';
-      timerWrap.style.display = 'none';
-    }
+function prevQuestion() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    displayQuestion();
+    startTimer();
+  }
+}
 
-    function restartExam(){
-      restartBtn.style.display = 'none';
-      currentIndex = 0;
-      renderQuestion();
-      resetTimer();
-      startTimer();
-      timerWrap.style.display = 'flex';
-    }
-    window.restartExam = restartExam;
+function pauseTimer() {
+  paused = !paused;
+}
 
-    /* ===========================
-       Timer + beep at 5s
-       =========================== */
-    function startTimer(){
-      stopTimer();
-      isPaused = false;
-      pauseBtn.textContent = 'Pause';
-      timeLeft = TIME_PER_Q;
-      updateTimerUI();
-      timerId = setInterval(()=>{
-        if(!isPaused){
-          timeLeft--;
-          updateTimerUI();
-          if(timeLeft === 5) playBeep(880,120);
-          if(timeLeft <= 0){
-            nextQuestion();
-          }
-        }
-      },1000);
-    }
+function readQuestion() {
+  const msg = new SpeechSynthesisUtterance();
+  const q = currentExam[currentIndex];
+  msg.text = `${q.q}. Choices: A. ${q.c[0]}. B. ${q.c[1]}. C. ${q.c[2]}. D. ${q.c[3]}.`;
+  msg.lang = "en-US";
+  window.speechSynthesis.speak(msg);
+}
 
-    function stopTimer(){ if(timerId){ clearInterval(timerId); timerId = null; } }
-    function resetTimer(){ stopTimer(); timeLeft = TIME_PER_Q; updateTimerUI(); }
-    function togglePause(){ isPaused = !isPaused; pauseBtn.textContent = isPaused ? 'Resume' : 'Pause'; }
-    function updateTimerUI(){ timerText.textContent = `${timeLeft}s`; }
+function restartExam() {
+  currentIndex = 0;
+  displayQuestion();
+  startTimer();
+}
 
-    /* ===========================
-       TTS & utilities
-       =========================== */
-    function speakCurrent(){
-      if(!currentSubject) return;
-      const questions = DATA[currentSubject] || [];
-      if(!questions.length) return;
-      const item = questions[currentIndex];
-      const text = `${item.q}. Choices: ${item.a.map((c,i)=> `${String.fromCharCode(65+i)}. ${c}`).join('. ')}`;
-      speakText(text);
-    }
-    function speakText(text){
-      if(!('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 0.95;
-      u.lang = 'en-US';
-      window.speechSynthesis.speak(u);
-    }
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+}
+</script>
 
-    ttsBtn.addEventListener('click', speakCurrent);
-    readBtn.addEventListener('click', speakCurrent);
-
-    /* ===========================
-       Fullscreen
-       =========================== */
-    function toggleFullscreen(){
-      if(!document.fullscreenElement){
-        document.documentElement.requestFullscreen?.();
-      } else {
-        document.exitFullscreen?.();
-      }
-    }
-    window.toggleFullscreen = toggleFullscreen;
-    fullBtn.addEventListener('click', toggleFullscreen);
-    fsBtn.addEventListener('click', toggleFullscreen);
-
-    /* ===========================
-       Beep
-       =========================== */
-    function playBeep(freq=880,duration=120){
-      try{
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.type = 'sine';
-        o.frequency.value = freq;
-        o.connect(g);
-        g.connect(ctx.destination);
-        o.start();
-        g.gain.setValueAtTime(0.0001, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration/1000);
-        setTimeout(()=>{ o.stop(); ctx.close(); }, duration + 30);
-      }catch(e){ console.warn('Beep failed', e); }
-    }
-
-    /* ===========================
-       Keyboard shortcuts
-       =========================== */
-    document.addEventListener('keydown',(e)=>{
-      if(presenter.classList.contains('active')){
-        if(e.key === 'ArrowRight') nextQuestion();
-        if(e.key === 'ArrowLeft') prevQuestion();
-        if(e.key === ' ') { e.preventDefault(); togglePause(); }
-        if(e.key.toLowerCase() === 'r') restartExam();
-        if(e.key.toLowerCase() === 'p') speakCurrent();
-      }
-    });
-
-    /* ===========================
-       Hook up start button & expose
-       =========================== */
-    startExamBtn.addEventListener('click', startExam);
-    window.startExam = startExam;
-    window.nextQuestion = nextQuestion;
-    window.prevQuestion = prevQuestion;
-    window.togglePause = togglePause;
-    window.restartExam = restartExam;
-    window.speakCurrent = speakCurrent;
-
-    /* Accessibility: focus start btn when present */
-    startExamBtn.addEventListener('focus', ()=>{ /* noop */ });
-
-  </script>
 </body>
 </html>
